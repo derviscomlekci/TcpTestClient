@@ -8,12 +8,17 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using TMPro;
+using UnityEngine.SceneManagement;
+using System.Threading;
+using System.Threading.Tasks;
+
 
 public class Client : MonoBehaviour
 {
     //Instance
-    public TMP_InputField input_username;
+    
     public static Client Instance;
+    SynchronizationContext _context;
 
     
     //Tcp client
@@ -23,8 +28,9 @@ public class Client : MonoBehaviour
     public int dataBufferSize = 4096;
     public int id;
     public string playerName;
+    public bool IsSearchGame = false;
     
-    
+  
     
     private void Awake()
     {
@@ -36,6 +42,8 @@ public class Client : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
+        UnityThread.initUnityThread();
+        _context = SynchronizationContext.Current;
     }
 
     private void Start()
@@ -48,14 +56,14 @@ public class Client : MonoBehaviour
     //
 
     
-    public void ServerConnect()
+    public void ServerConnect(string name)
     {
-        if (input_username.text!=null && socket==null)
+        if (name!=null && socket==null)
         {
+            playerName = name;
             socket = new TcpClient();
             socket.ReceiveBufferSize = dataBufferSize;
             socket.SendBufferSize = dataBufferSize;
-
             try
             {
                 socket.BeginConnect(ServerSettings.HOST,ServerSettings.PORT,ConnectCallbak,null);
@@ -76,7 +84,7 @@ public class Client : MonoBehaviour
             return;
         }
         Debug.Log("Connection succesfully..");
-        playerName = input_username.text;
+        //playerName = input_username.text;
         stream = socket.GetStream();
         buffer = new byte[dataBufferSize];
         stream.BeginRead(buffer, 0, dataBufferSize, ReceiveCallback, null);
@@ -99,6 +107,7 @@ public class Client : MonoBehaviour
             Debug.Log($"Gelen veri: {jsonData}");
             Handler.HandleData(jsonData);//<-- veriyi burada işliyoruz.
             stream.BeginRead(buffer, 0, dataBufferSize, ReceiveCallback, null);//Burada eğer tekrar veri gelirse diye bir read daha açıyoruz.
+            
         }
         
         catch (Exception e)
@@ -132,6 +141,37 @@ public class Client : MonoBehaviour
 
     public void ServerDisconnect()
     {
-        
+        if (socket!=null)
+        {
+            socket.Close();
+        }
+
+        if (stream!=null)
+        {
+            stream.Close();
+        }
+
+        socket = null;
+        stream = null;
+        buffer = null;
+        deneme();
+       // _context.Post(_ =>deneme(), this);
+    }
+
+    public void deneme()
+    {
+        SceneManager.LoadSceneAsync("Login"); 
+    }
+
+    public void ServerSearchGame()
+    {
+        //arama yaptığı bilgisini yolluyor.
+        SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id,(int)Handler.ClientEnum.SearchGame,true)));
+    }
+
+    public void ServerDeSearchGame()
+    {
+        //aramayı iptal ediyor.
+        SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id,(int)Handler.ClientEnum.SearchGame,false)));
     }
 }
