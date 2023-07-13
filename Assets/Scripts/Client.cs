@@ -29,9 +29,9 @@ public class Client : MonoBehaviour
     public int id;
     public string playerName;
     public bool IsSearchGame = false;
+
     
-  
-    
+
     private void Awake()
     {
         if (Instance==null)
@@ -94,6 +94,10 @@ public class Client : MonoBehaviour
     {
         try
         {
+            if (stream==null)
+            {
+                return;
+            }
             int receivedDataLeng = stream.EndRead(asyncResult);
             if (receivedDataLeng<=0)
             {
@@ -134,6 +138,12 @@ public class Client : MonoBehaviour
         }
     }
 
+    public void ClearAllUserData()
+    {
+        playerName = "";
+        IsSearchGame = false;
+    }
+
     public void SendCallback(IAsyncResult asyncResult)
     {
         stream.EndRead(asyncResult);
@@ -145,17 +155,16 @@ public class Client : MonoBehaviour
         {
             socket.Close();
         }
-
         if (stream!=null)
         {
             stream.Close();
         }
-
         socket = null;
         stream = null;
         buffer = null;
-        deneme();
-       // _context.Post(_ =>deneme(), this);
+        ClearAllUserData();
+        //deneme();
+        _context.Post(_ =>deneme(), this);
     }
 
     public void deneme()

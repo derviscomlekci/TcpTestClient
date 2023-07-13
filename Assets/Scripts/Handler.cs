@@ -6,20 +6,19 @@ using UnityEngine.SceneManagement;
 
 public class Handler : MonoBehaviour
 {
-    private void Awake()
-    {
-        //DontDestroyOnLoad(this.gameObject);
-    }
+    public static Action<bool> IsGameFoundedEvent;
 
     public enum ServerEnum
     {
         Hello=1,
-        ServerGame=2
+        ServerGame=2,
+        ConnectRoom=3
     }
     public enum ClientEnum
     {
         Hello=1,
-        SearchGame=2
+        SearchGame=2,
+        ConnectRoom=3
     }
 
     public static void HandleData(string jsonData)
@@ -46,6 +45,7 @@ public class Handler : MonoBehaviour
         Client.Instance.id = packet.id;
         //.Client.Instance.playerName = packet.name;
         Client.Instance.SendDataFromJson(JsonUtility.ToJson(Create_Hello(Client.Instance.id,(int)ClientEnum.Hello,Client.Instance.playerName)));//ismimizi gönderdik.
+
         UnityThread.executeInFixedUpdate(() =>
         {
             SceneManager.LoadScene("Menu");
@@ -99,7 +99,8 @@ public class Handler : MonoBehaviour
         }
         else if (!packet.search && packet.found)// oyun bulunduysa
         {
-            
+            //IsGameFoundedEvent?.Invoke(true);
+            MenuStartPanelManager.Instance.GameFounded(true);
             Debug.Log("Oyun bulundu.");
         }
         else//arama iptal edildiyse
