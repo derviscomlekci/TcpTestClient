@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,6 +20,13 @@ public class Handler : MonoBehaviour
         Hello=1,
         SearchGame=2,
         ConnectRoom=3
+    }
+    
+    private static SynchronizationContext Context { get; set; }
+
+    private void Awake()
+    {
+        Context = SynchronizationContext.Current;
     }
 
     public static void HandleData(string jsonData)
@@ -100,7 +108,7 @@ public class Handler : MonoBehaviour
         else if (!packet.search && packet.found)// oyun bulunduysa
         {
             //IsGameFoundedEvent?.Invoke(true);
-            MenuStartPanelManager.Instance.GameFounded(true);
+            Context.Post(_ => MenuStartPanelManager.Instance.GameFounded(true), null);
             Debug.Log("Oyun bulundu.");
         }
         else//arama iptal edildiyse
