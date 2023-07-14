@@ -13,13 +13,15 @@ public class Handler : MonoBehaviour
     {
         Hello=1,
         ServerGame=2,
-        ConnectRoom=3
+        ConnectRoom=3,
+        ChatMessage=4,
     }
     public enum ClientEnum
     {
         Hello=1,
         SearchGame=2,
-        ConnectRoom=3
+        ConnectRoom=3,
+        ChatMessage=4
     }
     
     private static SynchronizationContext Context { get; set; }
@@ -42,6 +44,11 @@ public class Handler : MonoBehaviour
             case (int)ServerEnum.ServerGame:
             {
                 GetSearch(JsonUtility.FromJson<SearchPacket>(jsonData));
+                break;
+            }
+            case (int)ServerEnum.ChatMessage:
+            {
+                Get_ChatMessage(JsonUtility.FromJson<ChatMessage>(jsonData));
                 break;
             }
             default:
@@ -109,6 +116,7 @@ public class Handler : MonoBehaviour
         {
             //IsGameFoundedEvent?.Invoke(true);
             Context.Post(_ => MenuStartPanelManager.Instance.GameFounded(true), null);
+            Context.Post(_=>Client.Instance.ServerLoadGameScene(),null);
             Debug.Log("Oyun bulundu.");
         }
         else//arama iptal edildiyse
@@ -116,6 +124,38 @@ public class Handler : MonoBehaviour
             Client.Instance.IsSearchGame = false;
             Debug.Log("Oyun arama iptal edildi.");
         }
+    }
+
+    public class ConnectRoom : Packet
+    {
+        public bool isConnect;
+    }
+
+    public static ConnectRoom CreateConnectRoom(int _id, int _type, bool _connect)
+    {
+        ConnectRoom packet = new ConnectRoom();
+        packet.id = _id;
+        packet.type = _type;
+        packet.isConnect = _connect;
+        return packet;
+    }
+    
+    public class ChatMessage : Packet
+    {
+        public string message;
+    }
+    public static ChatMessage CreateChatMessage(int _id, int _type, string _message)
+    {
+        ChatMessage packet = new ChatMessage();
+        packet.id = _id;
+        packet.type = _type;
+        packet.message = _message;
+        return packet;
+
+    }
+    public static void Get_ChatMessage(ChatMessage packet)
+    {
+        Context.Post(_ => GameManager.Instance.ChangeChatMessage(packet.message), null);
     }
     
 }

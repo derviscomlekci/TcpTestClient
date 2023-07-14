@@ -164,10 +164,10 @@ public class Client : MonoBehaviour
         buffer = null;
         ClearAllUserData();
         //deneme();
-        _context.Post(_ =>deneme(), this);
+        _context.Post(_ =>LoadLoginScene(), this);
     }
 
-    public void deneme()
+    public void LoadLoginScene()
     {
         SceneManager.LoadSceneAsync("Login"); 
     }
@@ -183,4 +183,23 @@ public class Client : MonoBehaviour
         //aramayı iptal ediyor.
         SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id,(int)Handler.ClientEnum.SearchGame,false)));
     }
+
+    public void ServerLoadGameScene()
+    {
+        //Oyun  sahnesini  yükle
+        //SendDataFromJson(JsonUtility.ToJson(Handler.CreateConnectRoom()));
+        SceneManager.LoadSceneAsync("Game");
+    }
+
+    public void ClientLoadedGameScene()
+    {
+        //Sunucuya sahneyi  yükledim diyecek oyunuc bilgilerini alocaz sunucudan.
+        SendDataFromJson(JsonUtility.ToJson(Handler.CreateConnectRoom(id,(int)Handler.ClientEnum.ConnectRoom,true)));
+    }
+
+    public void ServerSendChatMessage(string _message)
+    {
+        SendDataFromJson(JsonUtility.ToJson(Handler.CreateChatMessage(id,(int)(Handler.ClientEnum.ChatMessage),_message)));
+    }
+    
 }
