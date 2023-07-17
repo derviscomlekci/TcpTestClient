@@ -29,7 +29,7 @@ public class Client : MonoBehaviour
     public int id;
     public string playerName;
     public bool IsSearchGame = false;
-
+    
     
 
     private void Awake()
@@ -169,7 +169,8 @@ public class Client : MonoBehaviour
 
     public void LoadLoginScene()
     {
-        SceneManager.LoadSceneAsync("Login"); 
+        _context.Post(_=>SceneManager.LoadSceneAsync("Login"),null);
+        //SceneManager.LoadSceneAsync("Login"); 
     }
 
     public void ServerSearchGame()
@@ -199,7 +200,7 @@ public class Client : MonoBehaviour
 
     public void ServerSendChatMessage(string _message)
     {
-        SendDataFromJson(JsonUtility.ToJson(Handler.CreateChatMessage(id,(int)(Handler.ClientEnum.ChatMessage),_message)));
+        SendDataFromJson(JsonUtility.ToJson(Handler.CreateChatMessage(id,(int)(Handler.ClientEnum.ChatMessage),_message,Client.Instance.id)));
     }
     
 }

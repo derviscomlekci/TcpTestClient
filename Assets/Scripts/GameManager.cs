@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance{ get { return _instance; } }
     private static GameManager _instance;
     public TMP_InputField playerMessage;
-    public TextMeshProUGUI chatText;
+    public TextMeshProUGUI nameTxt;
     void Start()
     {
         if (_instance != null && _instance != this)
@@ -23,11 +23,13 @@ public class GameManager : MonoBehaviour
         }
         //Oyuncu odaya yüklendi.
         Client.Instance.ClientLoadedGameScene();
+        nameTxt.text = Client.Instance.playerName;
+
     }
 
     public void ChangeChatMessage(string message)
     {
-        chatText.text = message;
+        //chatText.text = message;
     }
 
     public void SendMessage()
@@ -35,6 +37,7 @@ public class GameManager : MonoBehaviour
         if (playerMessage.text!=null)
         {
             Client.Instance.ServerSendChatMessage(playerMessage.text);
+            playerMessage.text = "";
         }
     }
 }

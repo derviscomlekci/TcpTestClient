@@ -143,19 +143,27 @@ public class Handler : MonoBehaviour
     public class ChatMessage : Packet
     {
         public string message;
+        public int senderId;
     }
-    public static ChatMessage CreateChatMessage(int _id, int _type, string _message)
+    public static ChatMessage CreateChatMessage(int _id, int _type, string _message,int _senderId)
     {
         ChatMessage packet = new ChatMessage();
         packet.id = _id;
         packet.type = _type;
         packet.message = _message;
+        packet.senderId = _senderId;
         return packet;
 
     }
     public static void Get_ChatMessage(ChatMessage packet)
     {
-        Context.Post(_ => GameManager.Instance.ChangeChatMessage(packet.message), null);
+        //Context.Post(_ => GameManager.Instance.ChangeChatMessage(packet.message), null);
+        bool isClientMessage = false;
+        if (packet.senderId==Client.Instance.id)
+        {
+            isClientMessage = true;
+        }
+        Context.Post(_=>ChatListMenuManager.Instance.SpawnMessage(packet.message,isClientMessage),null);
     }
     
 }
