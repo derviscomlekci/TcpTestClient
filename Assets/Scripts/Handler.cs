@@ -11,17 +11,30 @@ public class Handler : MonoBehaviour
 
     public enum ServerEnum
     {
+        /*
         Hello=1,
         ServerGame=2,
         ConnectRoom=3,
         ChatMessage=4,
+        */
     }
     public enum ClientEnum
     {
+        RegisterUser=1,
+        LoginUser=2,
+        LoginUserResponse=4,
+        RegisterUserResponse=5,
+        GetProduct = 6,
+        GetUser = 7,
+        SetUser = 8,
+        
+        /*
         Hello=1,
         SearchGame=2,
         ConnectRoom=3,
-        ChatMessage=4
+        ChatMessage=4,
+        Register=5,
+        */
     }
     
     private static SynchronizationContext Context { get; set; }
@@ -34,8 +47,22 @@ public class Handler : MonoBehaviour
     public static void HandleData(string jsonData)
     {
         Packet mainpacket = JsonUtility.FromJson<Packet>(jsonData);
-        switch (mainpacket.type)
+        switch (mainpacket.opcode)
         {
+            case(int)ClientEnum.LoginUser:
+                //Kullanıcı giris yaptı.
+            break;
+            case(int)ClientEnum.RegisterUser:
+                //Kullanıcı giris yaptı.
+                break;
+            case(int)ClientEnum.RegisterUserResponse:
+                //Kullanıcı giris yaptı.
+                break;
+            case(int)ClientEnum.LoginUserResponse:
+                //Kullanıcı giris yaptı.
+                break;
+
+            /*
             case (int)ServerEnum.Hello://Server hellosu.
             {
                 Get_Hello(JsonUtility.FromJson<Hello>(jsonData));
@@ -51,15 +78,16 @@ public class Handler : MonoBehaviour
                 Get_ChatMessage(JsonUtility.FromJson<ChatMessage>(jsonData));
                 break;
             }
+            */
             default:
                 break;
         }
     }
     public static void Get_Hello(Hello packet)//sunucu kabul ve bizim bilgileri gönderdiğimiz yer.
     {
-        Client.Instance.id = packet.id;
+        //Client.Instance.id = packet.id;
         //.Client.Instance.playerName = packet.name;
-        Client.Instance.SendDataFromJson(JsonUtility.ToJson(Create_Hello(Client.Instance.id,(int)ClientEnum.Hello,Client.Instance.playerName)));//ismimizi gönderdik.
+        //Client.Instance.SendDataFromJson(JsonUtility.ToJson(Create_Hello(Client.Instance.id,(int)ClientEnum.Hello,Client.Instance.playerName)));//ismimizi gönderdik.
 
         UnityThread.executeInFixedUpdate(() =>
         {
@@ -69,8 +97,8 @@ public class Handler : MonoBehaviour
     }
     public class Packet
     {
-        public int id;
-        public int type;
+        //public int id;
+        public int opcode;
     }
     public class Hello: Packet 
     {
@@ -81,10 +109,40 @@ public class Handler : MonoBehaviour
     public static Hello Create_Hello(int _id,int _type,string _name)
     {
         Hello packet= new Hello();
-        packet.id = _id;
-        packet.type = _type;
+        //.id = _id;
+        packet.opcode = _type;
         packet.name = _name;
         return packet;
+    }
+
+    public class RegisterPacket : Packet
+    {
+        public string username;
+        public string password;
+        public string tckno;
+        public string address;
+    }
+
+    public static RegisterPacket Create_RegisterPacket(int _type,string _username,string _password,string _tckno,string  _address)
+    {
+        RegisterPacket packet = new RegisterPacket();
+        //packet.id = _id;
+        packet.opcode = _type;
+        packet.username = _username;
+        packet.password = _password;
+        packet.tckno = _tckno;
+        packet.address = _address;
+        return packet;
+    }
+
+    public static void GetRegisterStatus()
+    {
+        
+    }
+
+    public class RegisterReceivePacket : Packet
+    {
+        
     }
 
     public class SearchPacket : Packet
@@ -98,8 +156,8 @@ public class Handler : MonoBehaviour
     public static SearchPacket CreateSearch(int _id, int _type,bool _search)
     {
         SearchPacket searchPacket = new SearchPacket();
-        searchPacket.id = _id;
-        searchPacket.type = _type;
+        //searchPacket.id = _id;
+        searchPacket.opcode = _type;
         searchPacket.search = _search;
         return searchPacket;
     }
@@ -134,8 +192,8 @@ public class Handler : MonoBehaviour
     public static ConnectRoom CreateConnectRoom(int _id, int _type, bool _connect)
     {
         ConnectRoom packet = new ConnectRoom();
-        packet.id = _id;
-        packet.type = _type;
+        //packet.id = _id;
+        packet.opcode = _type;
         packet.isConnect = _connect;
         return packet;
     }
@@ -148,13 +206,13 @@ public class Handler : MonoBehaviour
     public static ChatMessage CreateChatMessage(int _id, int _type, string _message,int _senderId)
     {
         ChatMessage packet = new ChatMessage();
-        packet.id = _id;
-        packet.type = _type;
+        //packet.id = _id;
+        packet.opcode = _type;
         packet.message = _message;
         packet.senderId = _senderId;
         return packet;
-
     }
+    
     public static void Get_ChatMessage(ChatMessage packet)
     {
         //Context.Post(_ => GameManager.Instance.ChangeChatMessage(packet.message), null);

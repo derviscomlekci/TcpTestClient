@@ -16,11 +16,11 @@ using System.Threading.Tasks;
 public class Client : MonoBehaviour
 {
     //Instance
-    
+
     public static Client Instance;
     SynchronizationContext _context;
 
-    
+
     //Tcp client
     public TcpClient socket;
     public NetworkStream stream;
@@ -29,19 +29,19 @@ public class Client : MonoBehaviour
     public int id;
     public string playerName;
     public bool IsSearchGame = false;
-    
-    
+
 
     private void Awake()
     {
-        if (Instance==null)
+        if (Instance == null)
         {
             Instance = this;
         }
-        else if (Instance!=this)
+        else if (Instance != this)
         {
             Destroy(this.gameObject);
         }
+
         UnityThread.initUnityThread();
         _context = SynchronizationContext.Current;
     }
@@ -49,16 +49,29 @@ public class Client : MonoBehaviour
     private void Start()
     {
         DontDestroyOnLoad(this.gameObject);
+        if (socket==null)
+        {
+            socket = new TcpClient();
+            socket.ReceiveBufferSize = dataBufferSize;
+            socket.SendBufferSize = dataBufferSize;
+            try
+            {
+                socket.BeginConnect(ServerSettings.HOST, ServerSettings.PORT, ConnectCallbak, null);
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"An error occured while connecting :{e} ");
+            }
+        }
     }
-    
 
 
     //
 
-    
+
     public void ServerConnect(string name)
     {
-        if (name!=null && socket==null)
+        if (name != null && socket == null)
         {
             playerName = name;
             socket = new TcpClient();
@@ -66,7 +79,10 @@ public class Client : MonoBehaviour
             socket.SendBufferSize = dataBufferSize;
             try
             {
-                socket.BeginConnect(ServerSettings.HOST,ServerSettings.PORT,ConnectCallbak,null);
+                while (socket.Connected)
+                {
+                    socket.BeginConnect(ServerSettings.HOST, ServerSettings.PORT, ConnectCallbak, null);
+                }
             }
             catch (Exception e)
             {
@@ -77,12 +93,13 @@ public class Client : MonoBehaviour
 
     private void ConnectCallbak(IAsyncResult asyncResult)
     {
-        socket.EndConnect(asyncResult );//Bağlantı tamamlanıyor
+        socket.EndConnect(asyncResult); //Bağlantı tamamlanıyor
         if (!socket.Connected)
         {
             //Bağlanılamadıysa
             return;
         }
+
         Debug.Log("Connection succesfully..");
         //playerName = input_username.text;
         stream = socket.GetStream();
@@ -90,30 +107,32 @@ public class Client : MonoBehaviour
         stream.BeginRead(buffer, 0, dataBufferSize, ReceiveCallback, null);
     }
 
-    private void ReceiveCallback(IAsyncResult asyncResult)//Gelen verinin işlendiği bölüm burası.
+    private void ReceiveCallback(IAsyncResult asyncResult) //Gelen verinin işlendiği bölüm burası.
     {
         try
         {
-            if (stream==null)
+            if (stream == null)
             {
                 return;
             }
+
             int receivedDataLeng = stream.EndRead(asyncResult);
-            if (receivedDataLeng<=0)
+            if (receivedDataLeng <= 0)
             {
                 ServerDisconnect();
                 return;
             }
+
             byte[] _data = new byte[receivedDataLeng];
-            Array.Copy(buffer,_data,receivedDataLeng);
+            Array.Copy(buffer, _data, receivedDataLeng);
             string jsonData = Encoding.UTF8.GetString(_data);
             //Gelen veri handle edilecek.
             Debug.Log($"Gelen veri: {jsonData}");
-            Handler.HandleData(jsonData);//<-- veriyi burada işliyoruz.
-            stream.BeginRead(buffer, 0, dataBufferSize, ReceiveCallback, null);//Burada eğer tekrar veri gelirse diye bir read daha açıyoruz.
-            
+            Handler.HandleData(jsonData); //<-- veriyi burada işliyoruz.
+            stream.BeginRead(buffer, 0, dataBufferSize, ReceiveCallback,
+                null); //Burada eğer tekrar veri gelirse diye bir read daha açıyoruz.
         }
-        
+
         catch (Exception e)
         {
             ServerDisconnect();
@@ -151,38 +170,44 @@ public class Client : MonoBehaviour
 
     public void ServerDisconnect()
     {
-        if (socket!=null)
+        if (socket != null)
         {
             socket.Close();
         }
-        if (stream!=null)
+
+        if (stream != null)
         {
             stream.Close();
         }
+
         socket = null;
         stream = null;
         buffer = null;
         ClearAllUserData();
         //deneme();
-        _context.Post(_ =>LoadLoginScene(), this);
+        _context.Post(_ => LoadLoginScene(), this);
     }
 
     public void LoadLoginScene()
     {
-        _context.Post(_=>SceneManager.LoadSceneAsync("Login"),null);
+        _context.Post(_ => SceneManager.LoadSceneAsync("Login"), null);
         //SceneManager.LoadSceneAsync("Login"); 
     }
 
+    public void RegisterServer(Opcodes _opcode,string _username,string _password,string _tckno,string _address)
+    {
+        SendDataFromJson(JsonUtility.ToJson(Handler.Create_RegisterPacket((int)_opcode, _username, _password, _tckno, _address)));
+    }
     public void ServerSearchGame()
     {
         //arama yaptığı bilgisini yolluyor.
-        SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id,(int)Handler.ClientEnum.SearchGame,true)));
+        //SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id, (int)Handler.ClientEnum.SearchGame, true)));
     }
 
     public void ServerDeSearchGame()
     {
         //aramayı iptal ediyor.
-        SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id,(int)Handler.ClientEnum.SearchGame,false)));
+        //SendDataFromJson(JsonUtility.ToJson(Handler.CreateSearch(id, (int)Handler.ClientEnum.SearchGame, false)));
     }
 
     public void ServerLoadGameScene()
@@ -195,12 +220,11 @@ public class Client : MonoBehaviour
     public void ClientLoadedGameScene()
     {
         //Sunucuya sahneyi  yükledim diyecek oyunuc bilgilerini alocaz sunucudan.
-        SendDataFromJson(JsonUtility.ToJson(Handler.CreateConnectRoom(id,(int)Handler.ClientEnum.ConnectRoom,true)));
+        //SendDataFromJson(JsonUtility.ToJson(Handler.CreateConnectRoom(id, (int)Handler.ClientEnum.ConnectRoom, true)));
     }
 
     public void ServerSendChatMessage(string _message)
     {
-        SendDataFromJson(JsonUtility.ToJson(Handler.CreateChatMessage(id,(int)(Handler.ClientEnum.ChatMessage),_message,Client.Instance.id)));
+        //SendDataFromJson(JsonUtility.ToJson(Handler.CreateChatMessage(id, (int)(Handler.ClientEnum.ChatMessage), _message, Client.Instance.id)));
     }
-    
 }
