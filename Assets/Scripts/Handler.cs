@@ -18,16 +18,17 @@ public class Handler : MonoBehaviour
         ChatMessage=4,
         */
     }
+
     public enum ClientEnum
     {
-        RegisterUser=1,
-        LoginUser=2,
-        LoginUserResponse=4,
-        RegisterUserResponse=5,
+        RegisterUser = 1,
+        LoginUser = 2,
+        LoginUserResponse = 4,
+        RegisterUserResponse = 5,
         GetProduct = 6,
         GetUser = 7,
         SetUser = 8,
-        
+
         /*
         Hello=1,
         SearchGame=2,
@@ -36,7 +37,7 @@ public class Handler : MonoBehaviour
         Register=5,
         */
     }
-    
+
     private static SynchronizationContext Context { get; set; }
 
     private void Awake()
@@ -49,17 +50,19 @@ public class Handler : MonoBehaviour
         Packet mainpacket = JsonUtility.FromJson<Packet>(jsonData);
         switch (mainpacket.opcode)
         {
-            case(int)ClientEnum.LoginUser:
-                //Kullanıcı giris yaptı.
-            break;
-            case(int)ClientEnum.RegisterUser:
-                //Kullanıcı giris yaptı.
+            case (int)ClientEnum.LoginUser:
+                //Kullanıcı giris isteği attı.
                 break;
-            case(int)ClientEnum.RegisterUserResponse:
-                //Kullanıcı giris yaptı.
+            case (int)ClientEnum.RegisterUser:
+                //Kullanıcı üye oldu.
                 break;
-            case(int)ClientEnum.LoginUserResponse:
-                //Kullanıcı giris yaptı.
+            case (int)ClientEnum.RegisterUserResponse:
+                //Kullanıcı üye oldu ve serverdan dönüş geldi.
+                GetRegisterResponse(JsonUtility.FromJson<RegisterResponsePacket>(jsonData));
+                break;
+            case (int)ClientEnum.LoginUserResponse:
+                //Kullanıcıya girişi hakkında bilgi geldi.
+                
                 break;
 
             /*
@@ -83,32 +86,32 @@ public class Handler : MonoBehaviour
                 break;
         }
     }
-    public static void Get_Hello(Hello packet)//sunucu kabul ve bizim bilgileri gönderdiğimiz yer.
+
+    public static void Get_Hello(Hello packet) //sunucu kabul ve bizim bilgileri gönderdiğimiz yer.
     {
         //Client.Instance.id = packet.id;
         //.Client.Instance.playerName = packet.name;
         //Client.Instance.SendDataFromJson(JsonUtility.ToJson(Create_Hello(Client.Instance.id,(int)ClientEnum.Hello,Client.Instance.playerName)));//ismimizi gönderdik.
 
-        UnityThread.executeInFixedUpdate(() =>
-        {
-            SceneManager.LoadScene("Menu");
-        });
+        UnityThread.executeInFixedUpdate(() => { SceneManager.LoadScene("Menu"); });
         //SceneManager.LoadScene("Menu");
     }
+
     public class Packet
     {
         //public int id;
         public int opcode;
     }
-    public class Hello: Packet 
+
+    public class Hello : Packet
     {
         public string message;
         public string name;
     }
-    
-    public static Hello Create_Hello(int _id,int _type,string _name)
+
+    public static Hello Create_Hello(int _id, int _type, string _name)
     {
-        Hello packet= new Hello();
+        Hello packet = new Hello();
         //.id = _id;
         packet.opcode = _type;
         packet.name = _name;
@@ -123,7 +126,8 @@ public class Handler : MonoBehaviour
         public string address;
     }
 
-    public static RegisterPacket Create_RegisterPacket(int _type,string _username,string _password,string _tckno,string  _address)
+    public static RegisterPacket Create_RegisterPacket(int _type, string _username, string _password, string _tckno,
+        string _address)
     {
         RegisterPacket packet = new RegisterPacket();
         //packet.id = _id;
@@ -135,25 +139,46 @@ public class Handler : MonoBehaviour
         return packet;
     }
 
-    public static void GetRegisterStatus()
+    public class RegisterResponsePacket : Packet
     {
-        
+        public bool IsRegistered { get; set; }
+        public string Message { get; set; }
     }
 
-    public class RegisterReceivePacket : Packet
+    public static void GetRegisterResponse(RegisterResponsePacket data)
     {
-        
+        if (data.IsRegistered)
+        {
+            LoginScreenPanel.Instance.ChangeRegisterReceiveText(Color.green, data.Message);
+            return;
+        }
+        LoginScreenPanel.Instance.ChangeRegisterReceiveText(Color.red, data.Message);
+    }
+
+    public class LoginResponsePacket : Packet
+    {
+        public bool IsLoggedIn { get; set; }
+        public string ErrorMessage;
+    }
+
+    public static void GetLoginResponse(LoginResponsePacket data)
+    {
+        if (data.IsLoggedIn)
+        {
+            Debug.Log("Oyuncu içeri girdi.");
+            //Oyuncuyu içeriye sok
+        }
     }
 
     public class SearchPacket : Packet
     {
-        public bool search;//Bulunduysa false
-        public bool found;//Bulunduysa true
-        //Bulunduysa search:false, found:true, aranıyorsa search:true, found:false, bulunamadı search:false, found:true
+        public bool search; //Bulunduysa false
 
+        public bool found; //Bulunduysa true
+        //Bulunduysa search:false, found:true, aranıyorsa search:true, found:false, bulunamadı search:false, found:true
     }
 
-    public static SearchPacket CreateSearch(int _id, int _type,bool _search)
+    public static SearchPacket CreateSearch(int _id, int _type, bool _search)
     {
         SearchPacket searchPacket = new SearchPacket();
         //searchPacket.id = _id;
@@ -164,20 +189,20 @@ public class Handler : MonoBehaviour
 
     public static void GetSearch(SearchPacket packet)
     {
-        if (packet.search && !packet.found)//aranma işlemi başladı haberi geliyor  serverdan
+        if (packet.search && !packet.found) //aranma işlemi başladı haberi geliyor  serverdan
         {
             // arama texti görünür olacak.
             Client.Instance.IsSearchGame = true;
             Debug.Log("Oyun aranıyor.");
         }
-        else if (!packet.search && packet.found)// oyun bulunduysa
+        else if (!packet.search && packet.found) // oyun bulunduysa
         {
             //IsGameFoundedEvent?.Invoke(true);
             Context.Post(_ => MenuStartPanelManager.Instance.GameFounded(true), null);
-            Context.Post(_=>Client.Instance.ServerLoadGameScene(),null);
+            Context.Post(_ => Client.Instance.ServerLoadGameScene(), null);
             Debug.Log("Oyun bulundu.");
         }
-        else//arama iptal edildiyse
+        else //arama iptal edildiyse
         {
             Client.Instance.IsSearchGame = false;
             Debug.Log("Oyun arama iptal edildi.");
@@ -197,13 +222,14 @@ public class Handler : MonoBehaviour
         packet.isConnect = _connect;
         return packet;
     }
-    
+
     public class ChatMessage : Packet
     {
         public string message;
         public int senderId;
     }
-    public static ChatMessage CreateChatMessage(int _id, int _type, string _message,int _senderId)
+
+    public static ChatMessage CreateChatMessage(int _id, int _type, string _message, int _senderId)
     {
         ChatMessage packet = new ChatMessage();
         //packet.id = _id;
@@ -212,16 +238,16 @@ public class Handler : MonoBehaviour
         packet.senderId = _senderId;
         return packet;
     }
-    
+
     public static void Get_ChatMessage(ChatMessage packet)
     {
         //Context.Post(_ => GameManager.Instance.ChangeChatMessage(packet.message), null);
         bool isClientMessage = false;
-        if (packet.senderId==Client.Instance.id)
+        if (packet.senderId == Client.Instance.id)
         {
             isClientMessage = true;
         }
-        Context.Post(_=>ChatListMenuManager.Instance.SpawnMessage(packet.message,isClientMessage),null);
+
+        Context.Post(_ => ChatListMenuManager.Instance.SpawnMessage(packet.message, isClientMessage), null);
     }
-    
 }

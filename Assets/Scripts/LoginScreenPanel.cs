@@ -31,6 +31,11 @@ public class LoginScreenPanel : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        registerReceiveTxt.gameObject.SetActive(false);
+    }
+
 
     public void PanelController()
     {
@@ -59,8 +64,10 @@ public class LoginScreenPanel : MonoBehaviour
         }
     }
 
-    public void ChangeRegisterReceiveText(string message)
+    public void ChangeRegisterReceiveText(Color color,string message)
     {
+        registerReceiveTxt.gameObject.SetActive(true);
+        registerReceiveTxt.color = color;
         registerReceiveTxt.text = message;
     }
 }

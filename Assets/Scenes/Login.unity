@@ -140,7 +140,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &47734883
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2421,7 +2421,7 @@ MonoBehaviour:
   registerPasswordInput: {fileID: 1124693704}
   registerTckNoInput: {fileID: 902981821}
   registerAddressInput: {fileID: 1474378155}
-  registerReceiveTxt: {fileID: 0}
+  registerReceiveTxt: {fileID: 47734884}
 --- !u!1 &783411074
 GameObject:
   m_ObjectHideFlags: 0

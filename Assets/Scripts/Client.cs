@@ -198,6 +198,8 @@ public class Client : MonoBehaviour
     {
         SendDataFromJson(JsonUtility.ToJson(Handler.Create_RegisterPacket((int)_opcode, _username, _password, _tckno, _address)));
     }
+
+
     public void ServerSearchGame()
     {
         //arama yaptığı bilgisini yolluyor.
